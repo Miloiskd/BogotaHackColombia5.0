@@ -1,0 +1,55 @@
+# Entorno virtual
+venv/
+env/
+ENV/
+
+# Variables de entorno
+.env
+.env.local
+.env.*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Archivos de audio generados
+*.mp3
+*.wav
+*.ogg
+output_audio.mp3
+gpt_response_audio.mp3
+voz_*.mp3
+
+# Logs
+*.log
+logs/
+
+# Archivos temporales
+*.tmp
+temp/
