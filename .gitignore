@@ -53,3 +53,16 @@ logs/
 # Archivos temporales
 *.tmp
 temp/
+
+# Base de datos SQLite
+*.db
+
+# PDFs generados
+pdfs/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Bot
+bot/__pycache__/
