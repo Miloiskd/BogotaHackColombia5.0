@@ -73,6 +73,24 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "listar_auditorias",
+            "description": "Lista TODOS los contratos que ya han sido auditados, con su departamento, entidad, valor y nivel de riesgo. Usar cuando el usuario pregunta qué contratos ha auditado, de qué región/departamento/lugar son los auditados, o quiere un resumen de todas las auditorías.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "nivel_riesgo": {
+                        "type": "string",
+                        "enum": ["todos", "alto", "medio", "bajo"],
+                        "description": "Filtrar por nivel de riesgo. Usar 'todos' o no enviarlo para traer todos.",
+                    },
+                    "limite": {"type": "number", "description": "Cantidad maxima de resultados, default 10"},
+                },
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "cambiar_preferencia",
             "description": "Cambia la preferencia de respuesta del usuario entre texto y audio",
             "parameters": {
@@ -90,13 +108,22 @@ SYSTEM_PROMPT = """Eres el asistente del sistema Oculus Auditor, que analiza con
 Interpreta el mensaje del usuario y determina que funcion ejecutar con que parametros.
 Siempre responde con una function call apropiada.
 
-Si el usuario pide buscar contratos, usa buscar_contratos.
-Si pide auditar o analizar un contrato especifico, usa auditar_contrato.
-Si pide una infografia o imagen de riesgo, usa obtener_infografia.
-Si pregunta por contratos de alto riesgo o sospechosos, usa contratos_alto_riesgo.
-Si pide cambiar entre texto y audio, usa cambiar_preferencia.
+Reglas de enrutamiento:
+- Si el usuario pide BUSCAR contratos en SECOP (nuevos, de un lugar, por valor), usa buscar_contratos.
+- Si pide AUDITAR o ANALIZAR un contrato especifico con su ID, usa auditar_contrato.
+- Si pide una infografia o imagen de riesgo de un contrato especifico, usa obtener_infografia.
+- Si pregunta exclusivamente por contratos de ALTO RIESGO (los mas sospechosos), usa contratos_alto_riesgo.
+- Si pregunta QUE contratos ya fueron auditados, de QUE REGION/DEPARTAMENTO/LUGAR son los auditados, o quiere ver el historial de auditorias, usa listar_auditorias.
+- Si pide cambiar entre texto y audio, usa cambiar_preferencia.
 
-Para nombres de departamentos, usa la forma corta: "Antioquia", "Valle", "Valle del Cauca", "Bogota", "Cundinamarca", etc."""
+Para nombres de departamentos, usa la forma corta: "Antioquia", "Valle", "Valle del Cauca", "Bogota", "Cundinamarca", etc.
+
+Ejemplos:
+- "de que departamento son los contratos auditados" → listar_auditorias
+- "que contratos has auditado" → listar_auditorias
+- "muestra todos los auditados" → listar_auditorias
+- "contratos de alto riesgo en Bogota" → contratos_alto_riesgo con departamento=Bogota
+- "busca contratos en Antioquia" → buscar_contratos con departamento=Antioquia"""
 
 
 def process_natural_language(text: str) -> dict:
