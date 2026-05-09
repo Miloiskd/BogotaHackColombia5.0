@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
-import { ShieldCheck, ShieldAlert, Shield, ChevronDown, ChevronUp, Search } from 'lucide-react'
-import { getAllAudits } from '../services/api'
+import { ShieldCheck, ShieldAlert, Shield, ChevronDown, ChevronUp, Search, FileDown, Sparkles, Mail, Loader2 } from 'lucide-react'
+import { getAllAudits, generateReport, getReport, generateInfographic, getInfographic, sendReportByEmail } from '../services/api'
+import PDFViewer from '../components/PDFViewer/PDFViewer'
+import InfographicModal from '../components/InfographicModal/InfographicModal'
 
 function riskCfg(nivel) {
   return {
@@ -22,6 +24,126 @@ function ScoreCircle({ score, nivel }) {
   )
 }
 
+function ActionBtn({ icon: Icon, label, onClick, active, loading: isLoading }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={isLoading}
+      className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all border ${
+        active
+          ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm shadow-indigo-200'
+          : 'bg-[#f8f7fc] border-[#e4e4f0] hover:border-indigo-200 hover:bg-indigo-50 text-slate-600 hover:text-indigo-700'
+      } disabled:opacity-60 disabled:cursor-not-allowed`}
+    >
+      {isLoading ? <Loader2 size={12} className="animate-spin" /> : <Icon size={12} />}
+      {label}
+    </button>
+  )
+}
+
+function AuditActions({ idContrato }) {
+  const [pdfUrl, setPdfUrl]           = useState(null)
+  const [pdfLoading, setPdfLoading]   = useState(false)
+  const [showPDF, setShowPDF]         = useState(false)
+
+  const [imgUrl, setImgUrl]           = useState(null)
+  const [imgLoading, setImgLoading]   = useState(false)
+  const [showImg, setShowImg]         = useState(false)
+
+  const [showEmail, setShowEmail]     = useState(false)
+  const [email, setEmail]             = useState('')
+  const [sending, setSending]         = useState(false)
+
+  const handlePDF = async () => {
+    setShowPDF(true)
+    setPdfLoading(true)
+    try {
+      const existing = await getReport(idContrato)
+      if (existing.exists) { setPdfUrl(existing.url); setPdfLoading(false); return }
+    } catch {}
+    try {
+      const data = await generateReport(idContrato)
+      setPdfUrl(data.url)
+    } catch {}
+    setPdfLoading(false)
+  }
+
+  const handleInfographic = async () => {
+    setShowImg(true)
+    setImgLoading(true)
+    try {
+      const existing = await getInfographic(idContrato)
+      if (existing.exists) { setImgUrl(existing.imgbb_url); setImgLoading(false); return }
+    } catch {}
+    try {
+      const data = await generateInfographic(idContrato)
+      setImgUrl(data.imgbb_url)
+    } catch {}
+    setImgLoading(false)
+  }
+
+  const handleSendEmail = async () => {
+    if (!email) return
+    setSending(true)
+    try {
+      await sendReportByEmail(idContrato, email)
+      alert('Reporte enviado correctamente')
+      setShowEmail(false)
+      setEmail('')
+    } catch (err) {
+      alert('Error: ' + (err.response?.data?.detail || err.message))
+    }
+    setSending(false)
+  }
+
+  return (
+    <div className="mt-3 pt-3 border-t border-[#f0eef8]">
+      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Exportar / Compartir</p>
+      <div className="flex flex-wrap gap-2">
+        <ActionBtn icon={FileDown} label="Ver / Generar PDF"   onClick={handlePDF}         loading={pdfLoading} />
+        <ActionBtn icon={Sparkles} label="Infografía IA"       onClick={handleInfographic} loading={imgLoading} />
+        <ActionBtn icon={Mail}     label="Enviar por Email"    onClick={() => setShowEmail(v => !v)} active={showEmail} />
+      </div>
+
+      {showEmail && (
+        <div className="flex gap-2 mt-2.5">
+          <input
+            type="email"
+            placeholder="correo@ejemplo.com"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            className="flex-1 bg-white border border-[#e4e4f0] rounded-xl px-3 py-2 text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
+          />
+          <button
+            onClick={handleSendEmail}
+            disabled={sending || !email}
+            className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl px-4 py-2 text-xs font-semibold transition-colors"
+          >
+            {sending ? '…' : 'Enviar'}
+          </button>
+        </div>
+      )}
+
+      {showPDF && (
+        <PDFViewer
+          pdfUrl={pdfUrl}
+          onClose={() => setShowPDF(false)}
+          onGenerate={handlePDF}
+          generating={pdfLoading}
+        />
+      )}
+      {showImg && (
+        <InfographicModal
+          imgbbUrl={imgUrl}
+          onClose={() => setShowImg(false)}
+          onGenerate={handleInfographic}
+          generating={imgLoading}
+        />
+      )}
+    </div>
+  )
+}
+
 const FILTER_TABS = [
   { key: 'todos',  label: 'Todos' },
   { key: 'alto',   label: 'Alto riesgo' },
@@ -30,10 +152,10 @@ const FILTER_TABS = [
 ]
 
 export default function AuditsPage() {
-  const [audits, setAudits]   = useState([])
-  const [loading, setLoading] = useState(true)
-  const [filter, setFilter]   = useState('todos')
-  const [search, setSearch]   = useState('')
+  const [audits, setAudits]     = useState([])
+  const [loading, setLoading]   = useState(true)
+  const [filter, setFilter]     = useState('todos')
+  const [search, setSearch]     = useState('')
   const [expanded, setExpanded] = useState(null)
 
   useEffect(() => {
@@ -51,7 +173,10 @@ export default function AuditsPage() {
 
   const filtered = audits
     .filter(a => filter === 'todos' || a.nivel_riesgo === filter)
-    .filter(a => !search || a.id_contrato.toLowerCase().includes(search.toLowerCase()) || (a.resumen_ejecutivo || '').toLowerCase().includes(search.toLowerCase()))
+    .filter(a => !search ||
+      a.id_contrato.toLowerCase().includes(search.toLowerCase()) ||
+      (a.resumen_ejecutivo || '').toLowerCase().includes(search.toLowerCase())
+    )
 
   return (
     <div className="p-8">
@@ -120,6 +245,7 @@ export default function AuditsPage() {
                 }`}
                 style={{ animationDelay: `${Math.min(idx * 30, 300)}ms` }}
               >
+                {/* Row header */}
                 <div
                   className="flex items-center gap-4 p-4 cursor-pointer"
                   onClick={() => setExpanded(isExpanded ? null : audit.id_contrato)}
@@ -154,6 +280,7 @@ export default function AuditsPage() {
                   </div>
                 </div>
 
+                {/* Expanded body */}
                 {isExpanded && (
                   <div className="px-4 pb-4 border-t border-[#f0eef8]">
                     <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -170,6 +297,9 @@ export default function AuditsPage() {
                         </div>
                       )}
                     </div>
+
+                    {/* Actions */}
+                    <AuditActions idContrato={audit.id_contrato} />
                   </div>
                 )}
               </div>

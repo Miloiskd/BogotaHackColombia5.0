@@ -1,9 +1,17 @@
 import axios from 'axios'
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000',
+  baseURL: BASE_URL,
   timeout: 60000,
 })
+
+function absoluteUrl(url) {
+  if (!url) return null
+  if (url.startsWith('http')) return url
+  return `${BASE_URL}${url}`
+}
 
 export function getContracts(params = {}) {
   return api.get('/api/contracts', { params }).then(r => r.data)
@@ -38,11 +46,17 @@ export function getInfographic(id) {
 }
 
 export function generateReport(id) {
-  return api.post(`/api/reports/${id}/generate`).then(r => r.data)
+  return api.post(`/api/reports/${id}/generate`).then(r => ({
+    ...r.data,
+    url: absoluteUrl(r.data.url),
+  }))
 }
 
 export function getReport(id) {
-  return api.get(`/api/reports/${id}`).then(r => r.data)
+  return api.get(`/api/reports/${id}`).then(r => ({
+    ...r.data,
+    url: absoluteUrl(r.data.url),
+  }))
 }
 
 export function sendReportByEmail(id, email) {

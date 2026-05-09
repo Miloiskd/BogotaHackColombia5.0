@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(timeout 6 \".venv/Scripts/python.exe\" \"bot/telegram_bot.py\")",
+      "Bash(\"c:/Users/Fercho/OneDrive - Universidad de San Buenaventura Cali/BogotaHackColombia5.0/.venv/Scripts/pip.exe\" install \"sqlalchemy>=2.0.35\" --upgrade)",
+      "Bash(\"c:/Users/Fercho/OneDrive - Universidad de San Buenaventura Cali/BogotaHackColombia5.0/.venv/Scripts/python.exe\" -c \"import sqlalchemy; print\\(sqlalchemy.__version__\\)\")",
+      "Bash(\"c:/Users/Fercho/OneDrive - Universidad de San Buenaventura Cali/BogotaHackColombia5.0/.venv/Scripts/pip.exe\" install \"sqlalchemy>=2.0.35\" --upgrade --force-reinstall)",
+      "Bash(timeout 7 \".venv/Scripts/python.exe\" \"bot/telegram_bot.py\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8000/api/contracts?page=1)",
+      "Bash(page_size=1 2>&1)",
+      "Bash(curl -s http://localhost:8000/api/contracts?page=1)",
+      "Bash(netstat -ano)",
+      "Bash(findstr \":8000\")",
+      "Bash(\".venv/Scripts/python.exe\" -c \"import urllib.request; r=urllib.request.urlopen\\('http://localhost:8000/api/contracts?page=1&page_size=2'\\); print\\(r.read\\(\\)[:300].decode\\(\\)\\)\")",
+      "Bash(powershell -Command \"Get-Process -Id 14692,26160 2>&1 | Select-Object Id,ProcessName,MainWindowTitle | Format-Table\")",
+      "Bash(powershell -Command \"Invoke-RestMethod -Uri 'http://localhost:8000/' -Method GET\")",
+      "Bash(powershell -Command \"Start-Sleep 3; Get-Content 'C:\\\\Users\\\\Fercho\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-Fercho-OneDrive---Universidad-de-San-Buenaventura-Cali-BogotaHackColombia5-0\\\\9732709a-c096-4139-bc25-167cb965ba82\\\\tasks\\\\bym358x7r.output'\")",
+      "Bash(powershell -Command \"Get-Content 'C:\\\\Users\\\\Fercho\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-Fercho-OneDrive---Universidad-de-San-Buenaventura-Cali-BogotaHackColombia5-0\\\\9732709a-c096-4139-bc25-167cb965ba82\\\\tasks\\\\bym358x7r.output'\")",
+      "PowerShell(Get-WmiObject Win32_Process | Where-Object { $_.ProcessId -eq 14692 -or $_.ProcessId -eq 26160 } | Select-Object ProcessId, CommandLine | Format-List)",
+      "PowerShell(Stop-Process -Id 14692, 26160 -Force -ErrorAction SilentlyContinue)",
+      "PowerShell(netstat -ano)",
+      "PowerShell(taskkill /F /PID 14692 /PID 26160 2>&1)",
+      "PowerShell($pids = \\(netstat -ano | findstr \":8000\" | ForEach-Object { \\($_ -split '\\\\s+'\\)[-1] } | Sort-Object -Unique\\); foreach \\($p in $pids\\) { taskkill /F /PID $p 2>&1 }; Start-Sleep 2; netstat -ano | findstr \":8000\")"
+    ]
+  }
+}
