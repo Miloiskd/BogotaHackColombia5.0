@@ -6,8 +6,6 @@ import httpx
 from telegram import Update
 from telegram.ext import ContextTypes
 
-# sys.path must be modified BEFORE importing local packages
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "Backend"))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from services.gpt_intent import generate_response, process_natural_language  # noqa: E402
@@ -38,17 +36,12 @@ async def process_message_text(text: str, update: Update, _context: ContextTypes
     chat_id = str(update.effective_chat.id)
     logger.info(f"Mensaje recibido de {chat_id}: {text[:80]}")
 
-    # Lazy imports: kept inside the function so isort/autopep8 can't reorder
-    # them above the sys.path.insert calls at module level.
-    from database import SessionLocal  # noqa: E402
-    from models import TelegramUser    # noqa: E402
-
-    db = SessionLocal()
     try:
-        user = db.query(TelegramUser).filter(TelegramUser.chat_id == chat_id).first()
-        prefer_audio = user and user.response_format == "audio"
-    finally:
-        db.close()
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            r = await client.get(f"{API_BASE}/api/users/{chat_id}")
+            prefer_audio = r.json().get("response_format") == "audio"
+    except Exception:
+        prefer_audio = False
 
     intent_result = process_natural_language(text)
     intent = intent_result.get("intent", "unknown")

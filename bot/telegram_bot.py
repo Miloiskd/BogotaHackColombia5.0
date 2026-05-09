@@ -7,7 +7,7 @@ from handlers.text_handler import text_message_handler
 from handlers.audio_handler import audio_message_handler
 from handlers.preference_handler import start_handler, help_handler, format_callback, formato_handler
 
-load_dotenv()
+load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
 logging.basicConfig(
