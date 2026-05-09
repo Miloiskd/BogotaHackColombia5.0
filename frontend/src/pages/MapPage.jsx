@@ -60,9 +60,26 @@ export default function MapPage() {
   useEffect(() => {
     getDepartmentStats()
       .then(data => {
-        const m = {}
-        data.forEach(s => { m[norm(s.departamento)] = s })
-        setStatsMap(m)
+        // Merge Bogotá D.C. stats into Cundinamarca for map rendering.
+        // Contract data is untouched — only the map lookup is affected.
+        const merged = {}
+        data.forEach(s => {
+          const key = /bogot/i.test(s.departamento) ? 'cundinamarca' : norm(s.departamento)
+          if (merged[key]) {
+            merged[key].total_auditados += s.total_auditados
+            merged[key].alto_riesgo    += s.alto_riesgo
+            merged[key].medio_riesgo   += s.medio_riesgo
+            merged[key].bajo_riesgo    += s.bajo_riesgo
+            const total = merged[key].total_auditados
+            merged[key].color_intensity = total > 0 ? merged[key].alto_riesgo / total : 0
+            merged[key].score_promedio  = Math.round(
+              (merged[key].score_promedio + s.score_promedio) / 2
+            )
+          } else {
+            merged[key] = { ...s }
+          }
+        })
+        setStatsMap(merged)
         setStats(data)
       })
       .catch(() => {})

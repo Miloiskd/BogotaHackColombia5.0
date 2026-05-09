@@ -98,11 +98,19 @@ async def list_contracts(
         app_token=settings.SECOP_APP_TOKEN or None,
     )
 
+    contract_ids = [c.get("id_contrato") for c in result["contracts"] if c.get("id_contrato")]
+    audited_ids = set(
+        row.id_contrato
+        for row in db.query(Audit.id_contrato)
+                     .filter(Audit.id_contrato.in_(contract_ids))
+                     .all()
+    ) if contract_ids else set()
+
     enriched = []
     for c in result["contracts"]:
         c.pop("raw_json_raw", None)
         c.pop("raw_json", None)
-        c["_has_audit"] = False
+        c["_has_audit"] = c.get("id_contrato") in audited_ids
         enriched.append(c)
 
     return {

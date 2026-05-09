@@ -24,25 +24,28 @@ export function useContracts() {
     }
 
     try {
-      const data = await getContracts(apiParams)
-      let result = data.contracts || []
+      const [data] = await Promise.all([
+        getContracts(apiParams),
+        // Warm the audit cache if not yet loaded
+        !cachedAuditsRef.current
+          ? getAllAudits()
+              .then(audits => { cachedAuditsRef.current = new Set(audits.map(a => a.id_contrato)) })
+              .catch(() => { cachedAuditsRef.current = new Set() })
+          : Promise.resolve(),
+      ])
 
-      if (f.auditado === 'si' || f.auditado === 'no') {
-        if (!cachedAuditsRef.current) {
-          try {
-            const audits = await getAllAudits()
-            cachedAuditsRef.current = new Set(audits.map(a => a.id_contrato))
-          } catch {
-            cachedAuditsRef.current = new Set()
-          }
-        }
-        const auditIds = cachedAuditsRef.current
-        if (f.auditado === 'si') {
-          result = result.filter(c => auditIds.has(c.id_contrato))
-        } else {
-          result = result.filter(c => !auditIds.has(c.id_contrato))
-        }
-        result.forEach(c => { c._has_audit = auditIds.has(c.id_contrato) })
+      const auditIds = cachedAuditsRef.current ?? new Set()
+      let result = (data.contracts || []).map(c => ({
+        ...c,
+        _has_audit: c._has_audit || auditIds.has(c.id_contrato),
+      }))
+
+      if (f.auditado === 'si') {
+        result = result.filter(c => c._has_audit)
+        setTotal(result.length)
+        setPages(1)
+      } else if (f.auditado === 'no') {
+        result = result.filter(c => !c._has_audit)
         setTotal(result.length)
         setPages(1)
       } else {
