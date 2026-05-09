@@ -66,3 +66,7 @@ export function sendReportByEmail(id, email) {
 export function getDepartmentStats() {
   return api.get('/api/map/departments').then(r => r.data)
 }
+
+export function getRelationshipData() {
+  return api.get('/api/audit/relationships').then(r => r.data)
+}
