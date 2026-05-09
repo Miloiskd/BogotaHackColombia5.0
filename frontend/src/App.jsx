@@ -53,7 +53,7 @@ function Sidebar() {
       <div className="px-5 py-4 border-t border-white/5">
         <div className="flex items-center gap-2">
           <Zap size={11} className="text-indigo-400" />
-          <span className="text-[10px] text-white/25 font-medium">BogotáHack Colombia 5.0</span>
+          <span className="text-[10px] text-white/25 font-medium">Equipo SOCADE</span>
         </div>
       </div>
     </aside>

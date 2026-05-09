@@ -16,16 +16,33 @@ export default function ContractTable({ contracts = [], loading, page, pages, to
         </div>
       ) : (
         <>
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          <div>
+            <table className="w-full table-fixed">
+              <colgroup>
+                <col className="w-[22%]" />
+                <col className="w-[26%]" />
+                <col className="w-[15%]" />
+                <col className="w-[12%]" />
+                <col className="w-[11%]" />
+                <col className="w-[9%]" />
+                <col className="w-[5%]" />
+              </colgroup>
               <thead>
                 <tr className="border-b border-[#f0eef8] bg-[#f8f7fc]">
-                  {['Entidad / ID', 'Objeto', 'Modalidad', 'Valor', 'Depto.', 'Fecha', 'Estado', 'Audit'].map((h, i) => (
+                  {[
+                    { label: 'Entidad / ID', align: 'text-left' },
+                    { label: 'Objeto', align: 'text-left' },
+                    { label: 'Modalidad', align: 'text-left' },
+                    { label: 'Valor', align: 'text-right' },
+                    { label: 'Depto.', align: 'text-left' },
+                    { label: 'Estado', align: 'text-left' },
+                    { label: '✓', align: 'text-center' },
+                  ].map(({ label, align }) => (
                     <th
-                      key={h}
-                      className={`px-4 py-3 text-[10px] font-semibold uppercase tracking-widest text-slate-400 ${i === 3 ? 'text-right' : i === 7 ? 'text-center' : 'text-left'}`}
+                      key={label}
+                      className={`px-4 py-3 text-[10px] font-semibold uppercase tracking-widest text-slate-400 ${align}`}
                     >
-                      {h}
+                      {label}
                     </th>
                   ))}
                 </tr>

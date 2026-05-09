@@ -62,31 +62,35 @@ export default function ContractRow({ contract, isSelected, onClick }) {
           : 'hover:bg-[#f8f7fc]'
       }`}
     >
-      <td className="px-4 py-3">
-        <div className="max-w-[180px]">
-          <p className="text-sm font-semibold text-[#0f0f23] truncate leading-tight">
-            {contract.nombre_entidad || 'N/D'}
-          </p>
-          <p className="text-[11px] font-mono text-slate-400 mt-0.5 truncate">{contract.id_contrato}</p>
-        </div>
+      <td className="px-4 py-3 max-w-0">
+        <p className="text-sm font-semibold text-[#0f0f23] truncate leading-tight">
+          {contract.nombre_entidad || 'N/D'}
+        </p>
+        <p className="text-[11px] font-mono text-slate-400 mt-0.5 truncate">
+          {contract.id_contrato}
+          {contract.fecha_de_firma && (
+            <span className="text-slate-300"> · {fmtDate(contract.fecha_de_firma)}</span>
+          )}
+        </p>
       </td>
-      <td className="px-4 py-3">
-        <p className="text-xs text-slate-500 max-w-[220px] truncate leading-relaxed">
+      <td className="px-4 py-3 max-w-0">
+        <p className="text-xs text-slate-500 truncate leading-relaxed">
           {contract.descripcion_del_proceso || contract.objeto_del_contrato || '—'}
         </p>
       </td>
-      <td className="px-4 py-3">
+      <td className="px-4 py-3 max-w-0">
         <ModalidadBadge modalidad={contract.modalidad_de_contratacion} />
       </td>
-      <td className="px-4 py-3 text-sm font-bold text-[#0f0f23] text-right whitespace-nowrap">
+      <td className="px-4 py-3 text-sm font-bold text-[#0f0f23] text-right">
         {fmtMoney(contract.valor_del_contrato)}
       </td>
-      <td className="px-4 py-3 text-xs text-slate-500">{contract.departamento || '—'}</td>
-      <td className="px-4 py-3 text-xs text-slate-400 whitespace-nowrap">{fmtDate(contract.fecha_de_firma)}</td>
-      <td className="px-4 py-3">
+      <td className="px-4 py-3 max-w-0">
+        <p className="text-xs text-slate-500 truncate">{contract.departamento || '—'}</p>
+      </td>
+      <td className="px-4 py-3 max-w-0">
         <StatusBadge status={contract.estado_contrato} />
       </td>
-      <td className="px-4 py-3 text-center">
+      <td className="px-2 py-3 text-center">
         {contract._has_audit
           ? <CheckCircle2 size={16} className="text-indigo-500 inline-block" />
           : <span className="w-4 h-4 rounded-full border-2 border-slate-200 inline-block" />

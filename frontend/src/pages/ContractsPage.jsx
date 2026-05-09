@@ -8,7 +8,7 @@ import { useContracts } from '../hooks/useContracts'
 import { useAudit } from '../hooks/useAudit'
 
 export default function ContractsPage() {
-  const { contracts, total, page, pages, loading, filters, updateFilters, goToPage, fetchContracts } = useContracts()
+  const { contracts, total, page, pages, loading, filters, updateFilters, goToPage, fetchContracts, markAsAudited } = useContracts()
   const { auditData, loading: auditLoading, runAudit, fetchAudit } = useAudit()
   const [selectedContract, setSelectedContract] = useState(null)
   const [showPanel, setShowPanel] = useState(false)
@@ -31,8 +31,10 @@ export default function ContractsPage() {
   }, [])
 
   const handleAudit = useCallback(async (idContrato) => {
-    return await runAudit(idContrato)
-  }, [runAudit])
+    const result = await runAudit(idContrato)
+    if (result) markAsAudited(idContrato)
+    return result
+  }, [runAudit, markAsAudited])
 
   const handleReaudit = useCallback(async (idContrato) => {
     await runAudit(idContrato, true)

@@ -118,14 +118,18 @@ export default function AuditPanel({ contract, auditData, loading, onClose, onAu
         <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-[#f0eef8] px-5 py-4 flex items-start justify-between z-10">
           <div className="min-w-0 mr-4">
             <p className="text-sm font-bold text-[#0f0f23] truncate">{contract.nombre_entidad || 'Entidad'}</p>
-            <a
-              href={`https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=${contract.id_contrato}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs font-mono text-indigo-500 hover:text-indigo-700 hover:underline inline-flex items-center gap-1 mt-0.5 transition-colors"
-            >
-              {contract.id_contrato} <ExternalLink size={10} />
-            </a>
+            {contract.urlproceso ? (
+              <a
+                href={contract.urlproceso}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-mono text-indigo-500 hover:text-indigo-700 hover:underline inline-flex items-center gap-1 mt-0.5 transition-colors"
+              >
+                {contract.id_contrato} <ExternalLink size={10} />
+              </a>
+            ) : (
+              <span className="text-xs font-mono text-slate-400">{contract.id_contrato}</span>
+            )}
           </div>
           <button
             onClick={onClose}

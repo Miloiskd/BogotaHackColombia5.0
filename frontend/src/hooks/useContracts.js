@@ -80,5 +80,14 @@ export function useContracts() {
     fetchContracts(p, filtersRef.current)
   }, [fetchContracts])
 
-  return { contracts, total, page, pages, loading, filters, updateFilters, goToPage, fetchContracts }
+  const markAsAudited = useCallback((id_contrato) => {
+    if (cachedAuditsRef.current) {
+      cachedAuditsRef.current.add(id_contrato)
+    }
+    setContracts(prev =>
+      prev.map(c => c.id_contrato === id_contrato ? { ...c, _has_audit: true } : c)
+    )
+  }, [])
+
+  return { contracts, total, page, pages, loading, filters, updateFilters, goToPage, fetchContracts, markAsAudited }
 }
