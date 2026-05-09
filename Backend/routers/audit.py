@@ -130,6 +130,24 @@ async def run_audit(
     if not result:
         raise HTTPException(status_code=500, detail="Error al auditar el contrato")
 
+    if body.force:
+        try:
+            from config import get_settings
+            from models import Report, Alert
+            from services.pdf_generator import generate_pdf
+            settings = get_settings()
+            existing_report = db.query(Report).filter(Report.id_contrato == id_contrato).first()
+            if existing_report:
+                audit_obj = result["audit"]
+                alerts_obj = result["alerts"]
+                pdf_contract = {k: contract_data[k] for k in contract_data if k != "raw_json"}
+                pdf_audit = {"audit": audit_obj, "alerts": alerts_obj}
+                file_path = generate_pdf(pdf_contract, pdf_audit, output_dir=settings.PDF_OUTPUT_DIR)
+                existing_report.file_path = file_path
+                db.commit()
+        except Exception as e:
+            logger.warning(f"PDF regeneration failed after re-audit: {e}")
+
     return result
 
 

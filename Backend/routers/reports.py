@@ -123,7 +123,7 @@ async def get_report(
         Report.id_contrato == id_contrato
     ).first()
 
-    if not existing:
+    if not existing or not os.path.exists(existing.file_path):
         return {"exists": False, "url": None, "generated_at": None}
 
     return {
