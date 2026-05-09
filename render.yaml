@@ -1,5 +1,4 @@
 services:
-  # ── BACKEND ──────────────────────────────────────────────────────────────
   - type: web
     name: oculus-backend
     runtime: python
@@ -18,7 +17,7 @@ services:
       - key: SECOP_APP_TOKEN
         sync: false
       - key: ALLOWED_ORIGINS
-        sync: false           # poner la URL del frontend de Render aquí
+        sync: false
       - key: DATABASE_URL
         value: sqlite:////var/data/oculus.db
       - key: PDF_OUTPUT_DIR
@@ -28,7 +27,6 @@ services:
       mountPath: /var/data
       sizeGB: 1
 
-  # ── BOT ──────────────────────────────────────────────────────────────────
   - type: worker
     name: oculus-bot
     runtime: python
@@ -41,14 +39,13 @@ services:
       - key: OPENAI_API_KEY
         sync: false
       - key: API_BASE_URL
-        sync: false           # poner la URL del backend de Render aquí
+        sync: false
 
-# ── FRONTEND ─────────────────────────────────────────────────────────────
-staticSites:
-  - name: oculus-frontend
+  - type: static
+    name: oculus-frontend
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: dist
     envVars:
       - key: VITE_API_BASE_URL
-        sync: false           # poner la URL del backend de Render aquí
+        sync: false
