@@ -1,5 +1,9 @@
+import asyncio
+import hashlib
+import json
 import logging
 import os
+import time
 import httpx
 from typing import Optional
 from dotenv import load_dotenv
@@ -7,6 +11,24 @@ from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
 logger = logging.getLogger(__name__)
+
+_CACHE: dict = {}
+_CACHE_TTL = 300  # 5 minutes
+
+
+def _cache_key(params: dict) -> str:
+    return hashlib.md5(json.dumps(sorted(params.items()), ensure_ascii=False).encode()).hexdigest()
+
+
+def _cache_get(key: str):
+    entry = _CACHE.get(key)
+    if entry and time.time() - entry[0] < _CACHE_TTL:
+        return entry[1]
+    return None
+
+
+def _cache_set(key: str, value):
+    _CACHE[key] = (time.time(), value)
 
 # Endpoint público estándar de Socrata (no requiere autenticación)
 BASE_URL = "https://www.datos.gov.co/resource/jbjy-vk9h.json"
@@ -97,6 +119,10 @@ def _build_where(
 
 
 async def _get_query(params: dict, token: str = "") -> list:
+    key = _cache_key({**params, "__token__": bool(token)})
+    cached = _cache_get(key)
+    if cached is not None:
+        return cached
     headers = {"Accept": "application/json"}
     if token:
         headers["X-App-Token"] = token
@@ -104,7 +130,9 @@ async def _get_query(params: dict, token: str = "") -> list:
         resp = await client.get(BASE_URL, params=params, headers=headers)
         resp.raise_for_status()
         data = resp.json()
-        return data if isinstance(data, list) else []
+        result = data if isinstance(data, list) else []
+    _cache_set(key, result)
+    return result
 
 
 async def _fetch_count(where: str, token: str) -> int:
@@ -155,13 +183,16 @@ async def fetch_contracts(
     if where:
         params["$where"] = where
 
-    raw = await _get_query(params, token)
-    contracts = [_map_contract(r) for r in raw]
-
     if where:
-        total = await _fetch_count(where, token)
+        raw, total = await asyncio.gather(
+            _get_query(params, token),
+            _fetch_count(where, token),
+        )
     else:
+        raw = await _get_query(params, token)
         total = 100000
+
+    contracts = [_map_contract(r) for r in raw]
 
     return {
         "contracts": contracts,

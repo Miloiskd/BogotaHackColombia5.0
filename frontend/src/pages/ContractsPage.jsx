@@ -46,7 +46,7 @@ export default function ContractsPage() {
         <p className="text-xs font-semibold text-indigo-500 uppercase tracking-widest mb-1">SECOP II</p>
         <h1 className="text-2xl font-bold text-[#0f0f23] tracking-tight">Explorador de Contratos</h1>
         <p className="text-sm text-slate-500 mt-1">
-          {total.toLocaleString()} contratos disponibles · Selecciona uno para auditarlo con IA
+          {Object.keys(filters).length === 0 ? '+100.000' : total.toLocaleString()} contratos disponibles · Selecciona uno para auditarlo con IA
         </p>
       </div>
 
@@ -63,7 +63,7 @@ export default function ContractsPage() {
         loading={loading}
         page={page}
         pages={pages}
-        total={total}
+        totalLabel={Object.keys(filters).length === 0 ? '+100.000' : total.toLocaleString()}
         selectedId={selectedContract?.id_contrato}
         onSelect={handleSelectContract}
         onPageChange={goToPage}

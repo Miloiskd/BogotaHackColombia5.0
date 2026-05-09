@@ -75,6 +75,16 @@ def generate_pdf(contract: dict, audit_data: dict, output_dir: str = "./pdfs") -
         fontSize=9, leading=12,
     ))
     styles.add(ParagraphStyle(
+        "ScoreBig", parent=styles["Normal"],
+        fontSize=28, leading=40, alignment=TA_CENTER,
+        spaceBefore=10, spaceAfter=15,
+    ))
+    styles.add(ParagraphStyle(
+        "SubSection", parent=styles["Normal"],
+        fontSize=10, leading=14, textColor=PRIMARY,
+        fontName="Helvetica-Bold", spaceBefore=12, spaceAfter=4,
+    ))
+    styles.add(ParagraphStyle(
         "TableHeader", parent=styles["Normal"],
         fontSize=8, textColor=white, alignment=TA_CENTER,
     ))
@@ -134,7 +144,15 @@ def generate_pdf(contract: dict, audit_data: dict, output_dir: str = "./pdfs") -
         ["Modalidad", contract.get("modalidad_de_contratacion", "N/D")],
         ["Tipo de Contrato", contract.get("tipo_de_contrato", "N/D")],
         ["Proveedor", contract.get("proveedor_adjudicado", "N/D")],
-        ["Departamento", contract.get("departamento", "N/D")],
+        ["Departamento / Ciudad", f"{contract.get('departamento', 'N/D')} / {contract.get('ciudad', 'N/D')}"],
+        ["Sector", contract.get("sector", "N/D")],
+        ["Estado", contract.get("estado_contrato", "N/D")],
+        ["Fecha de Firma", _fmt_date(contract.get("fecha_de_firma"))],
+        ["Fecha de Inicio", _fmt_date(contract.get("fecha_de_inicio"))],
+        ["Fecha de Fin", _fmt_date(contract.get("fecha_de_fin"))],
+        ["Dias Adicionados", str(contract.get("dias_adicionados", 0) or 0)],
+        ["Pago Adelantado", contract.get("habilita_pago_adelantado", "N/D")],
+        ["Es PYME", contract.get("es_pyme", "N/D")],
     ]
     summary_table = Table(summary_data, colWidths=[4*cm, 10*cm])
     summary_table.setStyle(TableStyle([
@@ -155,10 +173,9 @@ def generate_pdf(contract: dict, audit_data: dict, output_dir: str = "./pdfs") -
 
     story.append(Paragraph("2. SCORE DE RIESGO", styles["SectionTitle"]))
     story.append(Paragraph(
-        f'<font size="28" color="{risk_color}"><b>{audit.get("score_total", 0)} / 100</b></font>',
-        ParagraphStyle("ScoreBig", parent=styles["CardText"], alignment=TA_CENTER),
+        f'<font color="{risk_color}"><b>{audit.get("score_total", 0)} / 100</b></font>',
+        styles["ScoreBig"],
     ))
-    story.append(Spacer(1, 10))
 
     score_data = [
         ["Componente", "Puntaje", "Maximo"],
@@ -244,7 +261,20 @@ def generate_pdf(contract: dict, audit_data: dict, output_dir: str = "./pdfs") -
     story.append(PageBreak())
 
     story.append(Paragraph("4. ANALISIS DETALLADO", styles["SectionTitle"]))
-    story.append(Paragraph(audit.get("analisis_detallado", "N/D"), styles["BodyText2"]))
+    analisis_raw = audit.get("analisis_detallado", "N/D") or "N/D"
+    for block in analisis_raw.split("\n\n"):
+        block = block.strip()
+        if not block:
+            continue
+        colon_idx = block.find(":")
+        if colon_idx > 0 and colon_idx < 60 and block[:colon_idx].isupper():
+            title = block[:colon_idx].strip()
+            body = block[colon_idx + 1:].strip()
+            story.append(Paragraph(title, styles["SubSection"]))
+            if body:
+                story.append(Paragraph(body, styles["BodyText2"]))
+        else:
+            story.append(Paragraph(block, styles["BodyText2"]))
     story.append(PageBreak())
 
     story.append(Paragraph("5. CONCLUSIONES Y RECOMENDACIONES", styles["SectionTitle"]))
@@ -252,28 +282,32 @@ def generate_pdf(contract: dict, audit_data: dict, output_dir: str = "./pdfs") -
     story.append(PageBreak())
 
     story.append(Paragraph("6. FICHA TECNICA DEL CONTRATO", styles["SectionTitle"]))
+
+    def _cell(text):
+        return Paragraph(str(text) if text else "N/D", styles["TableCell"])
+
     ficha = [
-        ["Campo", "Valor"],
-        ["ID Contrato", contract.get("id_contrato", "")],
-        ["Entidad", contract.get("nombre_entidad", "")],
-        ["NIT Entidad", contract.get("nit_entidad", "")],
-        ["Departamento", contract.get("departamento", "")],
-        ["Ciudad", contract.get("ciudad", "")],
-        ["Sector", contract.get("sector", "")],
-        ["Tipo de Contrato", contract.get("tipo_de_contrato", "")],
-        ["Modalidad", contract.get("modalidad_de_contratacion", "")],
-        ["Justificacion Modalidad", contract.get("justificacion_modalidad", "")],
-        ["Objeto", contract.get("objeto_del_contrato", "")],
-        ["Valor", _fmt_money(contract.get("valor_del_contrato"))],
-        ["Fecha de Firma", _fmt_date(contract.get("fecha_de_firma"))],
-        ["Fecha de Inicio", _fmt_date(contract.get("fecha_de_inicio"))],
-        ["Fecha de Fin", _fmt_date(contract.get("fecha_de_fin"))],
-        ["Dias Adicionados", str(contract.get("dias_adicionados", 0))],
-        ["Pago Adelantado", contract.get("habilita_pago_adelantado", "")],
-        ["Proveedor", contract.get("proveedor_adjudicado", "")],
-        ["Documento Proveedor", contract.get("documento_proveedor", "")],
-        ["Es PYME", contract.get("es_pyme", "")],
-        ["Estado", contract.get("estado_contrato", "")],
+        [Paragraph("Campo", styles["TableHeader"]), Paragraph("Valor", styles["TableHeader"])],
+        ["ID Contrato",          _cell(contract.get("id_contrato"))],
+        ["Entidad",              _cell(contract.get("nombre_entidad"))],
+        ["NIT Entidad",         _cell(contract.get("nit_entidad"))],
+        ["Departamento",         _cell(contract.get("departamento"))],
+        ["Ciudad",               _cell(contract.get("ciudad"))],
+        ["Sector",               _cell(contract.get("sector"))],
+        ["Tipo de Contrato",     _cell(contract.get("tipo_de_contrato"))],
+        ["Modalidad",            _cell(contract.get("modalidad_de_contratacion"))],
+        ["Justificacion",        _cell(contract.get("justificacion_modalidad"))],
+        ["Objeto",               _cell(contract.get("objeto_del_contrato") or contract.get("descripcion_del_proceso"))],
+        ["Valor",                _cell(_fmt_money(contract.get("valor_del_contrato")))],
+        ["Fecha de Firma",       _cell(_fmt_date(contract.get("fecha_de_firma")))],
+        ["Fecha de Inicio",      _cell(_fmt_date(contract.get("fecha_de_inicio")))],
+        ["Fecha de Fin",         _cell(_fmt_date(contract.get("fecha_de_fin")))],
+        ["Dias Adicionados",     _cell(str(contract.get("dias_adicionados", 0) or 0))],
+        ["Pago Adelantado",      _cell(contract.get("habilita_pago_adelantado"))],
+        ["Proveedor",            _cell(contract.get("proveedor_adjudicado"))],
+        ["Documento Proveedor",  _cell(contract.get("documento_proveedor"))],
+        ["Es PYME",              _cell(contract.get("es_pyme"))],
+        ["Estado",               _cell(contract.get("estado_contrato"))],
     ]
     ficha_table = Table(ficha, colWidths=[5*cm, 9*cm])
     ficha_table.setStyle(TableStyle([

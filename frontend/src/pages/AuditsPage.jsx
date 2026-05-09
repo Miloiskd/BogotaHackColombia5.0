@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react'
-import { ShieldCheck, ShieldAlert, Shield, ChevronDown, ChevronUp, Search, FileDown, Sparkles, Mail, Loader2 } from 'lucide-react'
-import { getAllAudits, generateReport, getReport, generateInfographic, getInfographic, sendReportByEmail } from '../services/api'
+import { useState, useEffect, useCallback } from 'react'
+import { ShieldCheck, ShieldAlert, Shield, ChevronDown, ChevronUp, Search,
+         FileDown, Sparkles, Mail, Loader2, RefreshCw, ArrowUpDown } from 'lucide-react'
+import { getAllAudits, auditContract, generateReport, getReport,
+         generateInfographic, getInfographic, sendReportByEmail } from '../services/api'
 import PDFViewer from '../components/PDFViewer/PDFViewer'
 import InfographicModal from '../components/InfographicModal/InfographicModal'
 
@@ -41,18 +43,19 @@ function ActionBtn({ icon: Icon, label, onClick, active, loading: isLoading }) {
   )
 }
 
-function AuditActions({ idContrato }) {
-  const [pdfUrl, setPdfUrl]           = useState(null)
-  const [pdfLoading, setPdfLoading]   = useState(false)
-  const [showPDF, setShowPDF]         = useState(false)
+function AuditActions({ idContrato, onReanalyzed }) {
+  const [pdfUrl, setPdfUrl]         = useState(null)
+  const [pdfLoading, setPdfLoading] = useState(false)
+  const [showPDF, setShowPDF]       = useState(false)
 
-  const [imgUrl, setImgUrl]           = useState(null)
-  const [imgLoading, setImgLoading]   = useState(false)
-  const [showImg, setShowImg]         = useState(false)
+  const [imgUrl, setImgUrl]         = useState(null)
+  const [imgLoading, setImgLoading] = useState(false)
+  const [showImg, setShowImg]       = useState(false)
 
-  const [showEmail, setShowEmail]     = useState(false)
-  const [email, setEmail]             = useState('')
-  const [sending, setSending]         = useState(false)
+  const [showEmail, setShowEmail]   = useState(false)
+  const [email, setEmail]           = useState('')
+  const [sending, setSending]       = useState(false)
+  const [reanalyzing, setReanalyzing] = useState(false)
 
   const handlePDF = async () => {
     setShowPDF(true)
@@ -96,13 +99,24 @@ function AuditActions({ idContrato }) {
     setSending(false)
   }
 
+  const handleReanalyze = async () => {
+    setReanalyzing(true)
+    try {
+      const result = await auditContract(idContrato, true)
+      if (result && onReanalyzed) onReanalyzed(idContrato, result.audit)
+    } catch (err) {
+      alert('Error al re-analizar: ' + (err.response?.data?.detail || err.message))
+    }
+    setReanalyzing(false)
+  }
+
   return (
     <div className="mt-3 pt-3 border-t border-[#f0eef8]">
-      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Exportar / Compartir</p>
       <div className="flex flex-wrap gap-2">
-        <ActionBtn icon={FileDown} label="Ver / Generar PDF"   onClick={handlePDF}         loading={pdfLoading} />
-        <ActionBtn icon={Sparkles} label="Infografía IA"       onClick={handleInfographic} loading={imgLoading} />
-        <ActionBtn icon={Mail}     label="Enviar por Email"    onClick={() => setShowEmail(v => !v)} active={showEmail} />
+        <ActionBtn icon={FileDown}  label="PDF"          onClick={handlePDF}         loading={pdfLoading} />
+        <ActionBtn icon={Sparkles}  label="Infografía"   onClick={handleInfographic} loading={imgLoading} />
+        <ActionBtn icon={Mail}      label="Email"        onClick={() => setShowEmail(v => !v)} active={showEmail} />
+        <ActionBtn icon={RefreshCw} label="Re-analizar"  onClick={handleReanalyze}   loading={reanalyzing} />
       </div>
 
       {showEmail && (
@@ -125,43 +139,49 @@ function AuditActions({ idContrato }) {
       )}
 
       {showPDF && (
-        <PDFViewer
-          pdfUrl={pdfUrl}
-          onClose={() => setShowPDF(false)}
-          onGenerate={handlePDF}
-          generating={pdfLoading}
-        />
+        <PDFViewer pdfUrl={pdfUrl} onClose={() => setShowPDF(false)} onGenerate={handlePDF} generating={pdfLoading} />
       )}
       {showImg && (
-        <InfographicModal
-          imgbbUrl={imgUrl}
-          onClose={() => setShowImg(false)}
-          onGenerate={handleInfographic}
-          generating={imgLoading}
-        />
+        <InfographicModal imgbbUrl={imgUrl} onClose={() => setShowImg(false)} onGenerate={handleInfographic} generating={imgLoading} />
       )}
     </div>
   )
 }
 
 const FILTER_TABS = [
-  { key: 'todos',  label: 'Todos' },
-  { key: 'alto',   label: 'Alto riesgo' },
-  { key: 'medio',  label: 'Medio riesgo' },
-  { key: 'bajo',   label: 'Bajo riesgo' },
+  { key: 'todos', label: 'Todos' },
+  { key: 'alto',  label: 'Alto riesgo' },
+  { key: 'medio', label: 'Medio riesgo' },
+  { key: 'bajo',  label: 'Bajo riesgo' },
+]
+
+const SORT_OPTIONS = [
+  { key: 'fecha_desc',  label: 'Más recientes' },
+  { key: 'score_desc',  label: 'Mayor riesgo' },
+  { key: 'score_asc',   label: 'Menor riesgo' },
 ]
 
 export default function AuditsPage() {
   const [audits, setAudits]     = useState([])
   const [loading, setLoading]   = useState(true)
   const [filter, setFilter]     = useState('todos')
+  const [sortBy, setSortBy]     = useState('fecha_desc')
   const [search, setSearch]     = useState('')
   const [expanded, setExpanded] = useState(null)
+  const [showSort, setShowSort] = useState(false)
 
   useEffect(() => {
     getAllAudits()
       .then(data => { setAudits(data); setLoading(false) })
       .catch(() => setLoading(false))
+  }, [])
+
+  const handleReanalyzed = useCallback((idContrato, newAudit) => {
+    setAudits(prev => prev.map(a =>
+      a.id_contrato === idContrato
+        ? { ...a, ...newAudit }
+        : a
+    ))
   }, [])
 
   const counts = {
@@ -171,12 +191,24 @@ export default function AuditsPage() {
     bajo:  audits.filter(a => a.nivel_riesgo === 'bajo').length,
   }
 
+  const sortLabel = SORT_OPTIONS.find(o => o.key === sortBy)?.label || 'Ordenar'
+
   const filtered = audits
     .filter(a => filter === 'todos' || a.nivel_riesgo === filter)
-    .filter(a => !search ||
-      a.id_contrato.toLowerCase().includes(search.toLowerCase()) ||
-      (a.resumen_ejecutivo || '').toLowerCase().includes(search.toLowerCase())
-    )
+    .filter(a => {
+      if (!search) return true
+      const q = search.toLowerCase()
+      return (
+        a.id_contrato.toLowerCase().includes(q) ||
+        (a.nombre_entidad || '').toLowerCase().includes(q) ||
+        (a.resumen_ejecutivo || '').toLowerCase().includes(q)
+      )
+    })
+    .sort((a, b) => {
+      if (sortBy === 'score_desc') return (b.score_total || 0) - (a.score_total || 0)
+      if (sortBy === 'score_asc')  return (a.score_total || 0) - (b.score_total || 0)
+      return new Date(b.auditado_at) - new Date(a.auditado_at)
+    })
 
   return (
     <div className="p-8">
@@ -188,8 +220,8 @@ export default function AuditsPage() {
         </p>
       </div>
 
-      {/* Filters + Search */}
-      <div className="flex flex-wrap items-center gap-3 mb-5 animate-up" style={{ animationDelay: '50ms' }}>
+      {/* Filters + Sort + Search */}
+      <div className="relative z-10 flex flex-wrap items-center gap-3 mb-5 animate-up" style={{ animationDelay: '50ms' }}>
         <div className="flex gap-1.5">
           {FILTER_TABS.map(({ key, label }) => (
             <button
@@ -209,14 +241,39 @@ export default function AuditsPage() {
           ))}
         </div>
 
+        {/* Sort dropdown */}
+        <div className="relative">
+          <button
+            onClick={() => setShowSort(v => !v)}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-white border border-[#e4e4f0] text-slate-500 hover:border-indigo-200 hover:text-indigo-600 transition-all"
+          >
+            <ArrowUpDown size={12} /> {sortLabel}
+          </button>
+          {showSort && (
+            <div className="absolute left-0 top-full mt-1 bg-white rounded-xl border border-[#e4e4f0] shadow-lg shadow-black/5 z-20 py-1 min-w-[140px]">
+              {SORT_OPTIONS.map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => { setSortBy(key); setShowSort(false) }}
+                  className={`w-full text-left px-4 py-2 text-xs font-medium transition-colors ${
+                    sortBy === key ? 'text-indigo-600 bg-indigo-50/60' : 'text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div className="relative ml-auto">
           <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Buscar por ID o resumen…"
+            placeholder="Buscar por entidad, ID o resumen…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="bg-white border border-[#e4e4f0] text-xs text-slate-700 placeholder-slate-400 rounded-xl pl-8 pr-4 py-2 w-64 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
+            className="bg-white border border-[#e4e4f0] text-xs text-slate-700 placeholder-slate-400 rounded-xl pl-8 pr-4 py-2 w-72 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
           />
         </div>
       </div>
@@ -252,12 +309,17 @@ export default function AuditsPage() {
                 >
                   <ScoreCircle score={audit.score_total} nivel={audit.nivel_riesgo} />
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-mono font-semibold text-slate-600">{audit.id_contrato}</span>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${cfg.badge}`}>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide shrink-0 ${cfg.badge}`}>
                         {audit.nivel_riesgo}
                       </span>
+                      <span className="text-xs font-mono text-slate-400 truncate">{audit.id_contrato}</span>
                     </div>
+                    {audit.nombre_entidad && (
+                      <p className="text-sm font-semibold text-[#0f0f23] truncate leading-tight mb-0.5">
+                        {audit.nombre_entidad}
+                      </p>
+                    )}
                     <p className="text-xs text-slate-500 line-clamp-1 leading-relaxed">
                       {audit.resumen_ejecutivo || 'Sin resumen disponible'}
                     </p>
@@ -283,23 +345,13 @@ export default function AuditsPage() {
                 {/* Expanded body */}
                 {isExpanded && (
                   <div className="px-4 pb-4 border-t border-[#f0eef8]">
-                    <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {audit.resumen_ejecutivo && (
-                        <div className="p-4 bg-[#f8f7fc] rounded-xl border border-[#eeedf5]">
-                          <p className="text-[10px] font-semibold text-indigo-400 uppercase tracking-widest mb-2">Resumen Ejecutivo</p>
-                          <p className="text-xs text-slate-600 leading-relaxed">{audit.resumen_ejecutivo}</p>
-                        </div>
-                      )}
-                      {audit.conclusiones && (
-                        <div className="p-4 bg-indigo-50/60 rounded-xl border border-indigo-100">
-                          <p className="text-[10px] font-semibold text-indigo-500 uppercase tracking-widest mb-2">Conclusiones</p>
-                          <p className="text-xs text-indigo-700 leading-relaxed">{audit.conclusiones}</p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Actions */}
-                    <AuditActions idContrato={audit.id_contrato} />
+                    {audit.resumen_ejecutivo && (
+                      <div className="mt-3 p-4 bg-[#f8f7fc] rounded-xl border border-[#eeedf5]">
+                        <p className="text-[10px] font-semibold text-indigo-400 uppercase tracking-widest mb-2">Resumen Ejecutivo</p>
+                        <p className="text-xs text-slate-600 leading-relaxed">{audit.resumen_ejecutivo}</p>
+                      </div>
+                    )}
+                    <AuditActions idContrato={audit.id_contrato} onReanalyzed={handleReanalyzed} />
                   </div>
                 )}
               </div>

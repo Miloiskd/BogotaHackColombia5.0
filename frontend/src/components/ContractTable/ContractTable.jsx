@@ -1,7 +1,7 @@
 import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 import ContractRow from './ContractRow'
 
-export default function ContractTable({ contracts = [], loading, page, pages, total, selectedId, onSelect, onPageChange }) {
+export default function ContractTable({ contracts = [], loading, page, pages, totalLabel, selectedId, onSelect, onPageChange }) {
   return (
     <div className="bg-white rounded-2xl border border-[#e4e4f0] overflow-hidden animate-up" style={{ animationDelay: '80ms' }}>
       {loading ? (
@@ -65,7 +65,7 @@ export default function ContractTable({ contracts = [], loading, page, pages, to
               Página <span className="font-semibold text-slate-600">{page}</span> de{' '}
               <span className="font-semibold text-slate-600">{pages}</span>
               {' · '}
-              <span className="font-semibold text-slate-600">{total.toLocaleString()}</span> resultados
+              <span className="font-semibold text-slate-600">{totalLabel}</span> resultados
             </span>
             <div className="flex items-center gap-1">
               <button

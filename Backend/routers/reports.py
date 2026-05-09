@@ -93,31 +93,18 @@ async def generate_report(
     id_contrato: str,
     db: Session = Depends(get_db),
 ):
-    existing = db.query(Report).filter(
-        Report.id_contrato == id_contrato
-    ).first()
-
     settings = get_settings()
     output_dir = settings.PDF_OUTPUT_DIR
-
-    if existing and os.path.exists(existing.file_path):
-        return {
-            "file_path": existing.file_path,
-            "url": f"/pdfs/{id_contrato}.pdf",
-            "generated_at": str(existing.generated_at),
-        }
 
     contract_data, audit_data, audit = _get_contract_and_audit(id_contrato, db)
 
     file_path = generate_pdf(contract_data, audit_data, output_dir=output_dir)
 
+    existing = db.query(Report).filter(Report.id_contrato == id_contrato).first()
     if existing:
         existing.file_path = file_path
     else:
-        db.add(Report(
-            id_contrato=id_contrato,
-            file_path=file_path,
-        ))
+        db.add(Report(id_contrato=id_contrato, file_path=file_path))
     db.commit()
 
     return {

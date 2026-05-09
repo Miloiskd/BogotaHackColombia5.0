@@ -279,17 +279,24 @@ async def get_audit(
 
 @router.get("")
 async def list_audits(db: Session = Depends(get_db)):
-    audits = db.query(Audit).order_by(Audit.auditado_at.desc()).all()
+    rows = (
+        db.query(Audit, Contract.nombre_entidad)
+        .outerjoin(Contract, Audit.id_contrato == Contract.id_contrato)
+        .order_by(Audit.auditado_at.desc())
+        .all()
+    )
     return [
         {
             "id": a.id,
             "id_contrato": a.id_contrato,
+            "nombre_entidad": nombre_entidad,
             "score_total": a.score_total,
             "score_reglas": a.score_reglas,
             "score_gpt": a.score_gpt,
             "nivel_riesgo": a.nivel_riesgo,
             "resumen_ejecutivo": a.resumen_ejecutivo,
+            "conclusiones": a.conclusiones,
             "auditado_at": str(a.auditado_at),
         }
-        for a in audits
+        for a, nombre_entidad in rows
     ]

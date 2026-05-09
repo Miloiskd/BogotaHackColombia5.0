@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FileText, ShieldAlert, AlertTriangle, MapPin, ArrowRight, TrendingUp, ShieldCheck, Shield } from 'lucide-react'
-import { getAllAudits, getFilterOptions, getContracts } from '../services/api'
+import { getAllAudits, getFilterOptions } from '../services/api'
 
 function riskColor(nivel) {
   return { alto: '#ef4444', medio: '#f59e0b', bajo: '#10b981' }[nivel] || '#94a3b8'
@@ -75,19 +75,13 @@ export default function Dashboard() {
   const navigate = useNavigate()
   const [audits, setAudits] = useState([])
   const [filterOpts, setFilterOpts] = useState({ departamentos: [], modalidades: [] })
-  const [contractTotal, setContractTotal] = useState(0)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([
-      getAllAudits(),
-      getFilterOptions(),
-      getContracts({ page: 1, page_size: 1 }),
-    ])
-      .then(([auditsData, opts, contractsData]) => {
+    Promise.all([getAllAudits(), getFilterOptions()])
+      .then(([auditsData, opts]) => {
         setAudits(auditsData)
         setFilterOpts(opts)
-        setContractTotal(contractsData.total || 0)
         setLoading(false)
       })
       .catch(() => setLoading(false))
@@ -109,7 +103,7 @@ export default function Dashboard() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
-        <StatCard icon={FileText}    label="Contratos en base de datos" value={loading ? '—' : contractTotal.toLocaleString()} color="indigo"  delay={0} />
+        <StatCard icon={FileText}    label="Contratos en base de datos" value="+100.000"                                        color="indigo"  delay={0} />
         <StatCard icon={ShieldAlert} label="Contratos auditados"         value={loading ? '—' : audits.length}                   color="violet"  delay={50} />
         <StatCard icon={AlertTriangle}label="Detectados de alto riesgo"  value={loading ? '—' : highRisk}                        color="red"     delay={100} />
         <StatCard icon={MapPin}      label="Departamentos activos"       value={loading ? '—' : filterOpts.departamentos.length} color="emerald" delay={150} />
