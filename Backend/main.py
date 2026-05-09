@@ -105,8 +105,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-os.makedirs("pdfs", exist_ok=True)
-app.mount("/pdfs", StaticFiles(directory="pdfs"), name="pdfs")
+_pdf_dir = os.getenv("PDF_OUTPUT_DIR", "./pdfs")
+os.makedirs(_pdf_dir, exist_ok=True)
+app.mount("/pdfs", StaticFiles(directory=_pdf_dir), name="pdfs")
 
 app.include_router(contracts.router, prefix="/api/contracts", tags=["contracts"])
 app.include_router(audit.router, prefix="/api/audit", tags=["audit"])
