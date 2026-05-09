@@ -1,17 +1,18 @@
-import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom'
-import { LayoutDashboard, FileSearch, ShieldCheck, Map, Eye, Zap, Network } from 'lucide-react'
+import { BrowserRouter, Routes, Route, NavLink, useLocation } from 'react-router-dom'
+import { LayoutDashboard, FileSearch, ShieldCheck, Map, Zap, Network } from 'lucide-react'
 import Dashboard from './pages/Dashboard'
 import ContractsPage from './pages/ContractsPage'
 import AuditsPage from './pages/AuditsPage'
 import MapPage from './pages/MapPage'
 import RelationshipMapPage from './pages/RelationshipMapPage'
+import LandingPage from './pages/LandingPage'
 
 const NAV_ITEMS = [
-  { to: '/', icon: LayoutDashboard, label: 'Inicio', end: true },
-  { to: '/contratos', icon: FileSearch, label: 'Contratos' },
-  { to: '/auditados', icon: ShieldCheck, label: 'Auditorías' },
-  { to: '/mapa', icon: Map, label: 'Mapa de Riesgo' },
-  { to: '/relaciones', icon: Network, label: 'Mapa Relaciones' },
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Inicio', end: true },
+  { to: '/contratos',  icon: FileSearch,      label: 'Contratos' },
+  { to: '/auditados',  icon: ShieldCheck,     label: 'Auditorías' },
+  { to: '/mapa',       icon: Map,             label: 'Mapa de Riesgo' },
+  { to: '/relaciones', icon: Network,         label: 'Mapa Relaciones' },
 ]
 
 function Sidebar() {
@@ -19,9 +20,7 @@ function Sidebar() {
     <aside className="fixed left-0 top-0 h-screen w-[220px] bg-[#13131f] flex flex-col z-30 border-r border-white/5">
       <div className="px-5 py-5 border-b border-white/5">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-indigo-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-            <Eye size={18} className="text-white" />
-          </div>
+          <img src="/logo.png" alt="Oculus" className="w-9 h-9 object-contain" />
           <div>
             <p className="text-white font-bold text-sm tracking-wide leading-none">OCULUS</p>
             <p className="text-indigo-400 text-[10px] font-medium tracking-widest mt-0.5">AUDITOR</p>
@@ -60,21 +59,48 @@ function Sidebar() {
   )
 }
 
+function AppShell() {
+  const location = useLocation()
+  const isLanding = location.pathname === '/'
+
+  if (isLanding) return <LandingPage />
+
+  return (
+    <div className="flex min-h-screen bg-[#f5f4f9]">
+      <Sidebar />
+      <main className="ml-[220px] flex-1 min-w-0 min-h-screen">
+        <Routes>
+          <Route path="/dashboard"  element={<Dashboard />} />
+          <Route path="/contratos"  element={<ContractsPage />} />
+          <Route path="/auditados"  element={<AuditsPage />} />
+          <Route path="/mapa"       element={<MapPage />} />
+          <Route path="/relaciones" element={<RelationshipMapPage />} />
+        </Routes>
+      </main>
+    </div>
+  )
+}
+
 export default function App() {
   return (
     <BrowserRouter>
-      <div className="flex min-h-screen bg-[#f5f4f9]">
-        <Sidebar />
-        <main className="ml-[220px] flex-1 min-w-0 min-h-screen">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/contratos" element={<ContractsPage />} />
-            <Route path="/auditados" element={<AuditsPage />} />
-            <Route path="/mapa" element={<MapPage />} />
-            <Route path="/relaciones" element={<RelationshipMapPage />} />
-          </Routes>
-        </main>
-      </div>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/*" element={
+          <div className="flex min-h-screen bg-[#f5f4f9]">
+            <Sidebar />
+            <main className="ml-[220px] flex-1 min-w-0 min-h-screen">
+              <Routes>
+                <Route path="/dashboard"  element={<Dashboard />} />
+                <Route path="/contratos"  element={<ContractsPage />} />
+                <Route path="/auditados"  element={<AuditsPage />} />
+                <Route path="/mapa"       element={<MapPage />} />
+                <Route path="/relaciones" element={<RelationshipMapPage />} />
+              </Routes>
+            </main>
+          </div>
+        } />
+      </Routes>
     </BrowserRouter>
   )
 }
