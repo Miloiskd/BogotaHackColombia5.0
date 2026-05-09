@@ -4,25 +4,28 @@ import { ArrowRight, ShieldAlert, Brain, FileText, Map, TrendingUp, AlertTriangl
 const PROBLEMS = [
   {
     icon: TrendingUp,
-    stat: '$117 billones',
-    label: 'COP contratados anualmente',
-    desc: 'Colombia ejecuta más de 117 billones de pesos en contratos públicos cada año a través del SECOP II, con supervisión limitada.',
+    stat: '+$100 billones',
+    label: 'COP en contratación pública anual',
+    desc: 'El Estado colombiano gasta más de $100 billones de pesos anuales en contratos públicos. En 2024 se adjudicaron más de $129 billones a través del SECOP.',
+    source: 'Colombia Compra Eficiente · datos.gov.co',
     color: 'text-red-500',
     bg: 'bg-red-50 border-red-100',
   },
   {
     icon: AlertTriangle,
-    stat: '< 5%',
-    label: 'de contratos auditados',
-    desc: 'Los entes de control no tienen capacidad para revisar manualmente el volumen masivo de contratos que se firman cada día.',
+    stat: '37 / 100',
+    label: 'Índice de Percepción de Corrupción 2025',
+    desc: 'Colombia obtuvo 37 puntos de 100 en el IPC 2025 de Transparencia Internacional, situándose entre los países con alta percepción de corrupción en el sector público.',
+    source: 'Transparencia Internacional · Transparencia por Colombia',
     color: 'text-amber-500',
     bg: 'bg-amber-50 border-amber-100',
   },
   {
     icon: Search,
-    stat: '+100.000',
-    label: 'contratos activos hoy',
-    desc: 'Contratación directa sin competencia, objetos vagos y pagos adelantados son señales de alerta que pasan desapercibidas.',
+    stat: '+1 millón',
+    label: 'contratos adjudicados en 2024',
+    desc: 'En 2024 se registraron más de 1 millón de adjudicaciones en el SECOP II. Contratación directa, objetos vagos y pagos adelantados son señales que pasan desapercibidas.',
+    source: 'Colombia Compra Eficiente · Datos Abiertos Colombia',
     color: 'text-indigo-500',
     bg: 'bg-indigo-50 border-indigo-100',
   },
@@ -148,20 +151,26 @@ export default function LandingPage() {
             Millones de contratos.<br />Casi ninguno revisado.
           </h2>
           <p className="text-slate-400 text-center max-w-2xl mx-auto mb-14 leading-relaxed">
-            En Colombia, la contratación pública mueve billones de pesos cada año. La Contraloría y la Procuraduría
-            no tienen la capacidad para auditar más del 5% de los contratos vigentes.
-            El resultado: irregularidades que nunca se detectan.
+            En Colombia, la contratación pública supera los $100 billones de pesos anuales y Colombia obtuvo
+            apenas 37 de 100 puntos en el Índice de Percepción de Corrupción 2025.
+            Con más de un millón de contratos adjudicados en 2024, los entes de control no tienen
+            capacidad para revisar manualmente ese volumen — las irregularidades pasan desapercibidas.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {PROBLEMS.map(({ icon: Icon, stat, label, desc, color, bg }) => (
-              <div key={stat} className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-slate-200 transition-all">
+            {PROBLEMS.map(({ icon: Icon, stat, label, desc, source, color, bg }) => (
+              <div key={stat} className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-slate-200 transition-all flex flex-col">
                 <div className={`w-10 h-10 rounded-xl border flex items-center justify-center mb-4 ${bg}`}>
                   <Icon size={18} className={color} />
                 </div>
                 <p className={`text-3xl font-bold mb-1 ${color}`}>{stat}</p>
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">{label}</p>
-                <p className="text-sm text-slate-500 leading-relaxed">{desc}</p>
+                <p className="text-sm text-slate-500 leading-relaxed flex-1">{desc}</p>
+                {source && (
+                  <p className="text-[10px] text-slate-300 mt-4 pt-3 border-t border-slate-100">
+                    Fuente: {source}
+                  </p>
+                )}
               </div>
             ))}
           </div>

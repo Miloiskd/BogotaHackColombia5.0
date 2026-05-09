@@ -20,7 +20,8 @@
       "PowerShell(Stop-Process -Id 14692, 26160 -Force -ErrorAction SilentlyContinue)",
       "PowerShell(netstat -ano)",
       "PowerShell(taskkill /F /PID 14692 /PID 26160 2>&1)",
-      "PowerShell($pids = \\(netstat -ano | findstr \":8000\" | ForEach-Object { \\($_ -split '\\\\s+'\\)[-1] } | Sort-Object -Unique\\); foreach \\($p in $pids\\) { taskkill /F /PID $p 2>&1 }; Start-Sleep 2; netstat -ano | findstr \":8000\")"
+      "PowerShell($pids = \\(netstat -ano | findstr \":8000\" | ForEach-Object { \\($_ -split '\\\\s+'\\)[-1] } | Sort-Object -Unique\\); foreach \\($p in $pids\\) { taskkill /F /PID $p 2>&1 }; Start-Sleep 2; netstat -ano | findstr \":8000\")",
+      "WebSearch"
     ]
   }
 }

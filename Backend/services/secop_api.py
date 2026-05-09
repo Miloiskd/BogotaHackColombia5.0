@@ -235,9 +235,11 @@ async def fetch_filter_options(app_token: Optional[str] = None) -> dict:
             logger.warning(f"Error fetching {field}: {e}")
             return []
 
-    deptos = await _get_values("departamento")
-    mods = await _get_values("modalidad_de_contratacion")
-    secs = await _get_values("sector")
+    deptos, mods, secs = await asyncio.gather(
+        _get_values("departamento"),
+        _get_values("modalidad_de_contratacion"),
+        _get_values("sector"),
+    )
 
     return {
         "departamentos": deptos or [

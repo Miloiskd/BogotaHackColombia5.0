@@ -18,30 +18,30 @@ logger = logging.getLogger(__name__)
 API_BASE = os.getenv("API_BASE_URL", "http://localhost:8000")
 
 
-async def process_message_text(text: str, update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def _send(update: Update, text: str, prefer_audio: bool):
+    if prefer_audio:
+        try:
+            audio_bytes = text_to_speech(text)
+            await update.message.reply_voice(audio_bytes)
+        except Exception as e:
+            logger.error(f"Error TTS: {e}")
+            await update.message.reply_text("No pude generar el audio. Intenta de nuevo.")
+        return
+    if len(text) > 4000:
+        for i in range(0, len(text), 4000):
+            await update.message.reply_text(text[i:i + 4000])
+    else:
+        await update.message.reply_text(text)
+
+
+async def process_message_text(text: str, update: Update, _context: ContextTypes.DEFAULT_TYPE):
     chat_id = str(update.effective_chat.id)
     logger.info(f"Mensaje recibido de {chat_id}: {text[:80]}")
-
-    intent_result = process_natural_language(text)
-    intent = intent_result.get("intent", "unknown")
-
-    if intent == "error":
-        await update.message.reply_text(f"Error: {intent_result.get('message', 'Desconocido')}")
-        return
-
-    if intent == "unknown":
-        await update.message.reply_text(
-            intent_result.get("message", "No entendi tu mensaje. Usa /ayuda para ver que puedo hacer.")
-        )
-        return
-
-    func_result = await execute_function(intent, intent_result.get("params", {}))
-    natural_response = generate_response(text, intent_result, func_result)
 
     # Lazy imports: kept inside the function so isort/autopep8 can't reorder
     # them above the sys.path.insert calls at module level.
     from database import SessionLocal  # noqa: E402
-    from models import TelegramUser  # noqa: E402
+    from models import TelegramUser    # noqa: E402
 
     db = SessionLocal()
     try:
@@ -50,20 +50,25 @@ async def process_message_text(text: str, update: Update, context: ContextTypes.
     finally:
         db.close()
 
-    if prefer_audio:
-        try:
-            audio_bytes = text_to_speech(natural_response)
-            await update.message.reply_voice(audio_bytes, caption="Respuesta de Oculus Auditor")
-            await update.message.reply_text(natural_response)
-        except Exception as e:
-            logger.error(f"Error TTS: {e}")
-            await update.message.reply_text(natural_response)
-    else:
-        if len(natural_response) > 4000:
-            for i in range(0, len(natural_response), 4000):
-                await update.message.reply_text(natural_response[i:i + 4000])
-        else:
-            await update.message.reply_text(natural_response)
+    intent_result = process_natural_language(text)
+    intent = intent_result.get("intent", "unknown")
+
+    if intent == "error":
+        await _send(update, f"Error: {intent_result.get('message', 'Desconocido')}", prefer_audio)
+        return
+
+    if intent == "unknown":
+        await _send(
+            update,
+            intent_result.get("message", "No entendi tu mensaje. Usa /ayuda para ver que puedo hacer."),
+            prefer_audio,
+        )
+        return
+
+    func_result = await execute_function(intent, intent_result.get("params", {}))
+    natural_response = generate_response(text, intent_result, func_result, prefer_audio=prefer_audio)
+
+    await _send(update, natural_response, prefer_audio)
 
 
 async def text_message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):

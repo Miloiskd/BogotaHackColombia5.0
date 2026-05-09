@@ -5,7 +5,7 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ContextTypes
 from handlers.text_handler import text_message_handler
 from handlers.audio_handler import audio_message_handler
-from handlers.preference_handler import start_handler, help_handler, format_callback
+from handlers.preference_handler import start_handler, help_handler, format_callback, formato_handler
 
 load_dotenv()
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -35,6 +35,7 @@ def main():
     app.add_handler(CommandHandler("start", start_handler))
     app.add_handler(CommandHandler("ayuda", help_handler))
     app.add_handler(CommandHandler("help", help_handler))
+    app.add_handler(CommandHandler("formato", formato_handler))
     app.add_handler(CallbackQueryHandler(format_callback, pattern="^format_"))
     app.add_handler(MessageHandler(filters.VOICE | filters.AUDIO, handle_audio))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))

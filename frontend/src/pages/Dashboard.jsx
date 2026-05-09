@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FileText, ShieldAlert, AlertTriangle, MapPin, ArrowRight, TrendingUp, ShieldCheck, Shield } from 'lucide-react'
-import { getAllAudits, getFilterOptions } from '../services/api'
+import { getAllAudits } from '../services/api'
 
 function riskColor(nivel) {
   return { alto: '#ef4444', medio: '#f59e0b', bajo: '#10b981' }[nivel] || '#94a3b8'
@@ -74,16 +74,11 @@ function QuickCard({ icon: Icon, title, desc, action, onClick, color }) {
 export default function Dashboard() {
   const navigate = useNavigate()
   const [audits, setAudits] = useState([])
-  const [filterOpts, setFilterOpts] = useState({ departamentos: [], modalidades: [] })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([getAllAudits(), getFilterOptions()])
-      .then(([auditsData, opts]) => {
-        setAudits(auditsData)
-        setFilterOpts(opts)
-        setLoading(false)
-      })
+    getAllAudits()
+      .then(data => { setAudits(data); setLoading(false) })
       .catch(() => setLoading(false))
   }, [])
 
@@ -106,7 +101,7 @@ export default function Dashboard() {
         <StatCard icon={FileText}    label="Contratos en base de datos" value="+100.000"                                        color="indigo"  delay={0} />
         <StatCard icon={ShieldAlert} label="Contratos auditados"         value={loading ? '—' : audits.length}                   color="violet"  delay={50} />
         <StatCard icon={AlertTriangle}label="Detectados de alto riesgo"  value={loading ? '—' : highRisk}                        color="red"     delay={100} />
-        <StatCard icon={MapPin}      label="Departamentos activos"       value={loading ? '—' : filterOpts.departamentos.length} color="emerald" delay={150} />
+        <StatCard icon={MapPin}      label="Departamentos de Colombia"    value="33"                                                color="emerald" delay={150} />
       </div>
 
       {/* Risk distribution + Recent audits */}

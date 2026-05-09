@@ -82,6 +82,36 @@ async def format_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         db.close()
 
 
+async def formato_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = str(update.effective_chat.id)
+
+    db = SessionLocal()
+    try:
+        user = db.query(TelegramUser).filter(TelegramUser.chat_id == chat_id).first()
+        current = user.response_format if user else "texto"
+    finally:
+        db.close()
+
+    texto_label = "\u2705 Texto (actual)" if current == "texto" else "\U0001F4DD Texto"
+    audio_label = "\u2705 Audio (actual)" if current == "audio" else "\U0001F50A Audio"
+
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(texto_label, callback_data="format_texto"),
+            InlineKeyboardButton(audio_label, callback_data="format_audio"),
+        ]
+    ])
+
+    fmt_label = "audio \U0001F50A" if current == "audio" else "texto \U0001F4DD"
+    await update.message.reply_text(
+        f"*Formato de respuesta*\n\n"
+        f"Formato actual: *{fmt_label}*\n\n"
+        f"Selecciona el nuevo formato:",
+        parse_mode="Markdown",
+        reply_markup=keyboard,
+    )
+
+
 async def help_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "*Oculus Auditor - Ayuda*\n\n"
@@ -98,6 +128,7 @@ async def help_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "\"Muestrame contratos sospechosos de este mes\"\n\n"
         "\U0001f6e0 *Comandos:*\n"
         "/start - Iniciar el bot\n"
+        "/formato - Cambiar formato de respuesta (texto o audio)\n"
         "/ayuda - Mostrar esta ayuda",
         parse_mode="Markdown",
     )

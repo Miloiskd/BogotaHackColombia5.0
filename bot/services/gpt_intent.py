@@ -161,14 +161,25 @@ def process_natural_language(text: str) -> dict:
         return {"intent": "error", "message": str(e)}
 
 
-def generate_response(original_text: str, intent_result: dict, func_result: dict) -> str:
+def generate_response(original_text: str, intent_result: dict, func_result: dict, prefer_audio: bool = False) -> str:
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         return json.dumps(func_result, indent=2, ensure_ascii=False)
 
     client = OpenAI(api_key=api_key)
 
-    prompt = f"""El usuario pregunto: "{original_text}"
+    if prefer_audio:
+        prompt = f"""El usuario pregunto: "{original_text}"
+
+El sistema obtuvo este resultado:
+{json.dumps(func_result, indent=2, ensure_ascii=False)}
+
+Responde en espanol en 2 o 3 oraciones cortas y directas, como si fuera un mensaje de voz.
+Sin formato markdown, sin listas, sin asteriscos. Solo las cifras y datos clave que el usuario pidio.
+Si hay varios items (contratos, auditorias), menciona solo los datos mas importantes de cada uno en una sola frase cada uno."""
+        max_tokens = 200
+    else:
+        prompt = f"""El usuario pregunto: "{original_text}"
 
 El sistema ejecuto la funcion {intent_result.get('intent')} y obtuvo este resultado:
 
@@ -179,13 +190,14 @@ Si es una lista de contratos, resumelos en formato legible mencionando entidad, 
 Si es una auditoria, menciona el score total, nivel de riesgo y las alertas principales.
 Si es una infografia, indica que se genero la imagen y da el enlace.
 Se conciso pero informativo."""
+        max_tokens = 600
 
     try:
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.5,
-            max_tokens=600,
+            max_tokens=max_tokens,
         )
         return response.choices[0].message.content
     except Exception as e:

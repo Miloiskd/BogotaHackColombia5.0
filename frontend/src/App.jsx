@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, NavLink, useLocation } from 'react-router-dom'
-import { LayoutDashboard, FileSearch, ShieldCheck, Map, Zap, Network } from 'lucide-react'
+import { LayoutDashboard, FileSearch, ShieldCheck, Map, Zap, Network, Send } from 'lucide-react'
 import Dashboard from './pages/Dashboard'
 import ContractsPage from './pages/ContractsPage'
 import AuditsPage from './pages/AuditsPage'
@@ -49,8 +49,17 @@ function Sidebar() {
         ))}
       </nav>
 
-      <div className="px-5 py-4 border-t border-white/5">
-        <div className="flex items-center gap-2">
+      <div className="px-3 py-3 border-t border-white/5 space-y-2">
+        <a
+          href="https://t.me/nononse_bot"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-sky-300 bg-sky-500/10 border border-sky-500/20 hover:bg-sky-500/20 transition-all"
+        >
+          <Send size={15} />
+          <span>Bot de Telegram</span>
+        </a>
+        <div className="flex items-center gap-2 px-3">
           <Zap size={11} className="text-indigo-400" />
           <span className="text-[10px] text-white/25 font-medium">Equipo SOCADE</span>
         </div>
