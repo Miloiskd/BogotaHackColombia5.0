@@ -1,15 +1,17 @@
 import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom'
-import { LayoutDashboard, FileSearch, ShieldCheck, Map, Eye, Zap } from 'lucide-react'
+import { LayoutDashboard, FileSearch, ShieldCheck, Map, Eye, Zap, Network } from 'lucide-react'
 import Dashboard from './pages/Dashboard'
 import ContractsPage from './pages/ContractsPage'
 import AuditsPage from './pages/AuditsPage'
 import MapPage from './pages/MapPage'
+import RelationshipMapPage from './pages/RelationshipMapPage'
 
 const NAV_ITEMS = [
   { to: '/', icon: LayoutDashboard, label: 'Inicio', end: true },
   { to: '/contratos', icon: FileSearch, label: 'Contratos' },
   { to: '/auditados', icon: ShieldCheck, label: 'Auditorías' },
   { to: '/mapa', icon: Map, label: 'Mapa de Riesgo' },
+  { to: '/relaciones', icon: Network, label: 'Mapa Relaciones' },
 ]
 
 function Sidebar() {
@@ -69,6 +71,7 @@ export default function App() {
             <Route path="/contratos" element={<ContractsPage />} />
             <Route path="/auditados" element={<AuditsPage />} />
             <Route path="/mapa" element={<MapPage />} />
+            <Route path="/relaciones" element={<RelationshipMapPage />} />
           </Routes>
         </main>
       </div>

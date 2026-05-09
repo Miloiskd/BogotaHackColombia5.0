@@ -8,7 +8,8 @@ load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
 logger = logging.getLogger(__name__)
 
-API_URL = "https://www.datos.gov.co/api/v3/views/jbjy-vk9h/query.json"
+# Endpoint público estándar de Socrata (no requiere autenticación)
+BASE_URL = "https://www.datos.gov.co/resource/jbjy-vk9h.json"
 
 # Campo interno -> campo real de la API
 _F2A = {
@@ -88,42 +89,19 @@ def _build_where(
         parts.append(f"sector='{e}'")
     if nombre_entidad:
         e = nombre_entidad.replace("'", "''")
-        parts.append(f"upper(nombre_entidad) LIKE upper('%{e}%')")
+        parts.append(f"upper(nombre_entidad) like upper('%{e}%')")
     if estado_contrato:
         e = estado_contrato.replace("'", "''")
         parts.append(f"estado_contrato='{e}'")
     return " AND ".join(parts) if parts else ""
 
 
-def _build_soql(
-    where: str,
-    orden_campo: str = "fecha_de_firma",
-    orden_dir: str = "DESC",
-) -> str:
-    api_field = _api(orden_campo)
-    parts = ["SELECT *"]
-    if where:
-        parts.append(f"WHERE {where}")
-    parts.append(f"ORDER BY `{api_field}` {orden_dir}")
-    return " ".join(parts)
-
-
-async def _post_query(
-    soql: str,
-    page: int = 1,
-    page_size: int = 20,
-    token: str = "",
-) -> list:
-    body = {
-        "query": soql,
-        "page": {"pageNumber": page, "pageSize": page_size},
-    }
-    headers = {
-        "Content-Type": "application/json",
-        "X-App-Token": token,
-    }
+async def _get_query(params: dict, token: str = "") -> list:
+    headers = {"Accept": "application/json"}
+    if token:
+        headers["X-App-Token"] = token
     async with httpx.AsyncClient(timeout=30.0) as client:
-        resp = await client.post(API_URL, json=body, headers=headers)
+        resp = await client.get(BASE_URL, params=params, headers=headers)
         resp.raise_for_status()
         data = resp.json()
         return data if isinstance(data, list) else []
@@ -131,20 +109,12 @@ async def _post_query(
 
 async def _fetch_count(where: str, token: str) -> int:
     try:
-        soql = "SELECT count(*) AS total"
+        params: dict = {"$select": "count(*) as total"}
         if where:
-            soql += f" WHERE {where}"
-        body = {
-            "query": soql,
-            "page": {"pageNumber": 1, "pageSize": 1},
-        }
-        headers = {"Content-Type": "application/json", "X-App-Token": token}
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.post(API_URL, json=body, headers=headers)
-            resp.raise_for_status()
-            data = resp.json()
-            if isinstance(data, list) and data:
-                return int(data[0].get("total", 0))
+            params["$where"] = where
+        data = await _get_query(params, token)
+        if data:
+            return int(data[0].get("total", 0))
     except Exception as e:
         logger.warning(f"Count query failed: {e}")
     return 0
@@ -176,12 +146,18 @@ async def fetch_contracts(
         nombre_entidad=nombre_entidad, estado_contrato=estado_contrato,
     )
 
-    soql = _build_soql(where, orden_campo, orden_dir)
+    api_field = _api(orden_campo)
+    params: dict = {
+        "$limit": page_size,
+        "$offset": (page - 1) * page_size,
+        "$order": f"{api_field} {orden_dir}",
+    }
+    if where:
+        params["$where"] = where
 
-    raw = await _post_query(soql, page, page_size, token)
+    raw = await _get_query(params, token)
     contracts = [_map_contract(r) for r in raw]
 
-    total = 0
     if where:
         total = await _fetch_count(where, token)
     else:
@@ -201,10 +177,11 @@ async def fetch_contract_by_id(
 ) -> Optional[dict]:
     token = app_token or _get_token()
     esc = id_contrato.replace("'", "''")
-    raw = await _post_query(
-        f"SELECT * WHERE id_contrato='{esc}'",
-        page=1, page_size=1, token=token,
-    )
+    params = {
+        "$where": f"id_contrato='{esc}'",
+        "$limit": 1,
+    }
+    raw = await _get_query(params, token)
     if raw:
         return _map_contract(raw[0])
     return None
@@ -215,10 +192,13 @@ async def fetch_filter_options(app_token: Optional[str] = None) -> dict:
 
     async def _get_values(field: str) -> list:
         try:
-            raw = await _post_query(
-                f"SELECT `{field}` GROUP BY `{field}` ORDER BY `{field}` LIMIT 50",
-                page=1, page_size=50, token=token,
-            )
+            params = {
+                "$select": field,
+                "$group": field,
+                "$order": field,
+                "$limit": 50,
+            }
+            raw = await _get_query(params, token)
             return sorted({str(r[field]) for r in raw if r.get(field)})
         except Exception as e:
             logger.warning(f"Error fetching {field}: {e}")
